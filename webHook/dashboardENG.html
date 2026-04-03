@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📬 Live Webhook Dashboard - with delete</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, 'Segoe UI', sans-serif;
+            background: linear-gradient(145deg, #f1f5f9 0%, #e6edf4 100%);
+            padding: 2rem 1.5rem;
+        }
+        .dashboard { max-width: 1400px; margin: 0 auto; }
+        .header {
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 2rem;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        h1 {
+            font-size: 1.9rem;
+            background: linear-gradient(135deg, #1E2B3C, #2C3E50);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .badge, .live-badge {
+            font-size: 0.8rem;
+            background: #0f172a;
+            color: white;
+            padding: 0.25rem 0.8rem;
+            border-radius: 40px;
+        }
+        .live-badge { background: #10b981; margin-left: 0.7rem; }
+        .stats { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-top: 1rem; }
+        .message-count {
+            background: white;
+            padding: 0.4rem 1rem;
+            border-radius: 60px;
+            font-weight: 600;
+        }
+        .clear-btn {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 0.4rem 1.2rem;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .clear-btn:hover { background: #fee2e2; border-color: #f87171; }
+        .webhook-info {
+            background: #f8fafc;
+            border-radius: 1.2rem;
+            padding: 1rem 1.4rem;
+            font-family: monospace;
+            border-left: 5px solid #3b82f6;
+            margin-top: 1rem;
+            word-break: break-all;
+        }
+        .messages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+            gap: 1.5rem;
+        }
+        .message-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.25rem;
+            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.08);
+            transition: 0.2s;
+            position: relative;
+        }
+        .message-card:hover { transform: translateY(-3px); }
+        .delete-btn {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: #94a3b8;
+            transition: 0.2s;
+            font-weight: bold;
+            line-height: 1;
+            padding: 4px 6px;
+            border-radius: 30px;
+        }
+        .delete-btn:hover {
+            color: #ef4444;
+            background: #fee2e2;
+            transform: scale(1.05);
+        }
+        .student-name {
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 0.2rem 0.7rem;
+            border-radius: 30px;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+        .student-email {
+            font-size: 0.7rem;
+            font-family: monospace;
+            color: #2563eb;
+            background: #eff6ff;
+            padding: 0.2rem 0.6rem;
+            border-radius: 30px;
+        }
+        .message-content {
+            margin: 1rem 0;
+            background: #fafcff;
+            padding: 0.7rem;
+            border-radius: 1rem;
+            border-left: 3px solid #3b82f6;
+        }
+        .timestamp {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-align: right;
+            border-top: 1px solid #eef2ff;
+            padding-top: 0.5rem;
+        }
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem;
+            background: #fef9e3;
+            border-radius: 2rem;
+            color: #a16207;
+            border: 1px dashed #facc15;
+        }
+        @media (max-width: 700px) {
+            body { padding: 1rem; }
+            .messages-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="header">
+        <h1>🧑‍🏫 Live Webhook Dashboard <span class="badge">real‑time</span><span class="live-badge">● accepting messages</span></h1>
+        <div class="stats">
+            <div class="message-count" id="messageCountDisplay">📬 0 / 10 messages</div>
+            <button class="clear-btn" id="clearAllBtn">🗑️ Clear all messages</button>
+        </div>
+        <div class="webhook-info">
+            🔌 <strong>WEBHOOK ENDPOINT (POST)</strong><br/>
+            <code id="webhookUrl">Loading...</code><br/>
+            📨 <strong>Expected JSON / Form data:</strong> <code>{ "name": "Student", "email": "student@example.com", "message": "Hello!" }</code><br/>
+        </div>
+    </div>
+    <div id="messagesContainer" class="messages-grid">
+        <div class="empty-state">✨ Waiting for incoming messages...<br>Send a POST request to the webhook above.</div>
+    </div>
+    <div class="footer-note" style="margin-top:2rem; text-align:center; font-size:0.8rem; color:#475569;">
+        ⚡ Auto‑refreshes every 1 second — new messages appear instantly.<br>
+        Maximum 10 latest messages shown (oldest automatically drops out). Click ✖️ to delete any message.
+    </div>
+</div>
+<script>
+    const API_BASE = '/api/messages';
+    let messagesContainer = document.getElementById('messagesContainer');
+    let messageCountSpan = document.getElementById('messageCountDisplay');
+    let clearBtn = document.getElementById('clearAllBtn');
+    let webhookUrlSpan = document.getElementById('webhookUrl');
+    webhookUrlSpan.textContent = window.location.origin + API_BASE;
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    async function deleteMessage(id) {
+        try {
+            const response = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                // Refresh the list after deletion
+                await fetchMessages();
+            } else {
+                console.error('Failed to delete message');
+            }
+        } catch (err) {
+            console.error('Delete error:', err);
+        }
+    }
+
+    function renderMessages(messages) {
+        if (!messages || messages.length === 0) {
+            messagesContainer.innerHTML = '<div class="empty-state">📭 No messages yet.<br>📡 POST name, email & message to the webhook above.</div>';
+            messageCountSpan.innerHTML = '📬 0 / 10 messages';
+            return;
+        }
+        const limited = messages.slice(0, 10);
+        const count = limited.length;
+        messageCountSpan.innerHTML = `📬 ${count} / 10 message${count !== 1 ? 's' : ''}`;
+        
+        const blocksHtml = limited.map(msg => `
+            <div class="message-card" data-id="${escapeHtml(msg.id)}">
+                <button class="delete-btn" data-id="${escapeHtml(msg.id)}" title="Delete this message">✖️</button>
+                <div class="card-header" style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:0.75rem; padding-right: 28px;">
+                    <div>
+                        <span class="student-name">🧑‍🎓 ${escapeHtml(msg.name)}</span>
+                        <span class="student-email">✉️ ${escapeHtml(msg.email)}</span>
+                    </div>
+                </div>
+                <div class="message-content">💬 ${escapeHtml(msg.message)}</div>
+                <div class="timestamp">🕒 ${msg.timestamp ? new Date(msg.timestamp).toLocaleString() : 'Just now'}</div>
+            </div>
+        `).join('');
+        
+        messagesContainer.innerHTML = blocksHtml;
+        
+        // Attach delete event listeners to each delete button
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.getAttribute('data-id');
+                if (id && confirm('Delete this message?')) {
+                    deleteMessage(id);
+                }
+            });
+        });
+    }
+
+    async function fetchMessages() {
+        try {
+            const resp = await fetch(API_BASE);
+            if (resp.ok) renderMessages(await resp.json());
+        } catch (err) { console.error(err); }
+    }
+
+    async function clearAllMessages() {
+        if (!confirm('⚠️ Clear ALL messages from the dashboard?')) return;
+        await fetch(API_BASE, { method: 'DELETE' });
+        fetchMessages();
+    }
+
+    clearBtn.onclick = clearAllMessages;
+    fetchMessages();
+    setInterval(fetchMessages, 1000);
+</script>
+</body>
+</html>
