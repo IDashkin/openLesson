@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sadbys Particles</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0f0f1a;
+            font-family: 'Courier New', Courier, monospace;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #title {
+            font-size: 5rem;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+            z-index: 10;
+            margin-bottom: 10px;
+            text-align: center;
+            cursor: text;
+            outline: none;
+            user-select: text;
+            position: relative;
+        }
+
+        #subtitle {
+            font-size: 2.5rem;
+            font-weight: 300;
+            text-shadow: 0 0 10px rgba(255, 0, 204, 0.6);
+            z-index: 10;
+            margin-bottom: 40px;
+            text-align: center;
+            letter-spacing: 2px;
+            transition: color 0.2s ease, text-shadow 0.2s ease;
+            cursor: text;
+            outline: none;
+            user-select: text;
+            position: relative;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) translateY(100%); /* Hidden initially */
+            z-index: 10;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 12px 12px 0 0;
+            backdrop-filter: blur(5px);
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .controls.visible {
+            transform: translateX(-50%) translateY(0); /* Slide up */
+        }
+
+        button {
+            background: linear-gradient(45deg, #ff00cc, #3333ff);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: transform 0.1s, box-shadow 0.2s;
+            font-family: inherit;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 0, 204, 0.6);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* Custom Color Picker Styling */
+        input[type="color"] {
+            appearance: none;
+            border: none;
+            width: 50px;
+            height: 40px;
+            border-radius: 5px;
+            cursor: pointer;
+            background: none;
+            overflow: hidden;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 5px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Slider Styling */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] {
+            appearance: none;
+            width: 150px;
+            height: 8px;
+            background: #333;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #ff00cc;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 0, 204, 0.8);
+        }
+
+        /* Toggle Switch Styling */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="title" contenteditable="true">Открытый урок по  дисциплине: Web-программирование и интернет технологии</h1>
+    <h2 id="subtitle" contenteditable="true">Тема: Форма обратной связи: от HTML до отправки данных на серве</h2>
+    <h2 id="subtitle" contenteditable="true">Цель: Создавать, стилизовать, валидировать и отправлять HTML формы на сервер</h2>
+    
+    <div id="canvas-container">
+        <canvas id="particleCanvas"></canvas>
+    </div>
+
+    <div class="controls" id="controlsContainer">
+        <button onclick="toggleGravity()">Gravity</button>
+        <button onclick="burstParticles()">Burst!</button>
+        <button onclick="toggleLines()">Connect Lines</button>
+        
+        <div class="slider-container">
+            <input type="range" id="speedSlider" min="0" max="5" step="0.1" value="0.5">
+            <span id="speedValue">0.5</span>
+        </div>
+
+        <div class="slider-container">
+            <label for="particleSpeedSlider">Particle Speed</label>
+            <input type="range" id="particleSpeedSlider" min="0.1" max="5" step="0.1" value="1.0">
+            <span id="particleSpeedValue">1.0</span>
+        </div>
+
+        <div class="toggle-container">
+            <input type="checkbox" id="autoShiftToggle">
+            <label for="autoShiftToggle">Auto Shift</label>
+        </div>
+
+        <input type="color" id="colorPicker" value="#00ffcc" title="Pick Color">
+    </div>
+
+    <script>
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        const subtitle = document.getElementById('subtitle');
+        const controls = document.getElementById('controlsContainer');
+        
+        let width, height;
+        let particles = [];
+        let hue = 0;
+        let gravity = false;
+        let drawLines = false;
+        const particleCount = 150;
+
+        // New Settings
+        let autoShift = false;
+        let shiftSpeed = 0.5;
+        let particleSpeed = 1.0; // Controls movement speed (always > 0)
+
+        // Resize handling
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Particle Class
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.size = Math.random() * 3 + 2;
+                this.baseColor = hue;
+            }
+
+            update() {
+                // Physics
+                if (gravity) {
+                    this.vy += 0.1;
+                }
+
+                // Particles always move (no friction, no stopping)
+                this.x += this.vx * particleSpeed;
+                this.y += this.vy * particleSpeed;
+
+                // Bounce off walls
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `hsl(${this.baseColor}, 100%, 60%)`;
+                ctx.fill();
+            }
+        }
+
+        // Initialize particles
+        function init() {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        // Update Subtitle Color
+        function updateSubtitleColor() {
+            subtitle.style.color = `hsl(${hue}, 100%, 70%)`;
+            subtitle.style.textShadow = `0 0 15px hsl(${hue}, 100%, 50%)`;
+        }
+
+        // Animation Loop
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw lines if enabled
+            if (drawLines) {
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < 100) {
+                            ctx.beginPath();
+                            ctx.strokeStyle = `hsla(${hue}, 100%, 60%, ${1 - dist/100})`;
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            // Color Shifting Logic
+            if (autoShift) {
+                hue += shiftSpeed;
+                // Keep hue within 0-360
+                if (hue > 360) hue -= 360;
+                // Update particles dynamically
+                particles.forEach(p => p.baseColor = hue);
+                // Update subtitle color
+                updateSubtitleColor();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Button Actions
+        function toggleGravity() {
+            gravity = !gravity;
+        }
+
+        function burstParticles() {
+            particles.forEach(p => {
+                p.vx = (Math.random() - 0.5) * 20;
+                p.vy = (Math.random() - 0.5) * 20;
+            });
+        }
+
+        function toggleLines() {
+            drawLines = !drawLines;
+        }
+
+        function changeColor() {
+            // Random shift
+            hue = Math.random() * 360;
+            particles.forEach(p => p.baseColor = hue);
+            updateSubtitleColor();
+        }
+
+        // Color Picker Action
+        const colorPicker = document.getElementById('colorPicker');
+        colorPicker.addEventListener('input', (e) => {
+            const color = e.target.value;
+            const rgb = hexToRgb(color);
+            const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+            
+            hue = hsl.h;
+            particles.forEach(p => p.baseColor = hsl.h);
+            updateSubtitleColor();
+        });
+
+        // Speed Slider Action (Color Speed)
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        speedSlider.addEventListener('input', (e) => {
+            shiftSpeed = parseFloat(e.target.value);
+            speedValue.textContent = shiftSpeed;
+        });
+
+        // Particle Speed Slider Action
+        const particleSpeedSlider = document.getElementById('particleSpeedSlider');
+        const particleSpeedValue = document.getElementById('particleSpeedValue');
+        particleSpeedSlider.addEventListener('input', (e) => {
+            particleSpeed = parseFloat(e.target.value);
+            particleSpeedValue.textContent = particleSpeed;
+        });
+
+        // Auto Shift Toggle Action
+        const autoShiftToggle = document.getElementById('autoShiftToggle');
+        autoShiftToggle.addEventListener('change', (e) => {
+            autoShift = e.target.checked;
+        });
+
+        // Control Visibility Logic
+        const mouseThreshold = 100; // Distance from bottom to trigger
+
+        window.addEventListener('mousemove', (e) => {
+            const distanceFromBottom = window.innerHeight - e.clientY;
+            const isNearBottom = distanceFromBottom < mouseThreshold;
+            const isHoveringControls = controls.contains(e.target);
+
+            if (isNearBottom || isHoveringControls) {
+                controls.classList.add('visible');
+            } else {
+                controls.classList.remove('visible');
+            }
+        });
+
+        // Helper: Hex to RGB
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        // Helper: RGB to HSL
+        function rgbToHsl(r, g, b) {
+            r /= 255, g /= 255, b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0; 
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return { h: h * 360, s: s * 100, l: l * 100 };
+        }
+
+        // Start
+        init();
+        animate();
+    </script>
+</body>
+</html>
+

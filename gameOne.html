@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS-игра: несколько уровней</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+        body {
+            background: linear-gradient(145deg, #f0f4f8 0%, #d9e2ec 100%);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .game-container {
+            max-width: 1100px;
+            width: 100%;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 40px;
+            box-shadow: 0 25px 40px -10px rgba(0,20,30,0.3);
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            font-weight: 600;
+            color: #1e3c5c;
+            margin-top: 0;
+            font-size: 2.2rem;
+            letter-spacing: -0.5px;
+        }
+        .level-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .level-btn {
+            background: #b6ccdd;
+            border: none;
+            color: #1e3c5c;
+            font-size: 1.2rem;
+            font-weight: 600;
+            padding: 12px 30px;
+            border-radius: 40px;
+            box-shadow: 0 5px 0 #7e99ab;
+            cursor: pointer;
+            transition: 0.07s linear;
+            border: 2px solid transparent;
+        }
+        .level-btn.active {
+            background: #1e4f76;
+            color: white;
+            box-shadow: 0 5px 0 #0f2c41;
+            border-color: #ffd966;
+        }
+        .play-area {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .properties-panel {
+            flex: 2;
+            min-width: 300px;
+            background: #ffffffd9;
+            border-radius: 32px;
+            padding: 25px;
+            box-shadow: inset 0 1px 4px #ffffff, 0 10px 20px #b0c4d9;
+        }
+        .property-row {
+            display: flex;
+            align-items: center;
+            margin: 18px 0;
+            font-size: 1.3rem;
+            background: #edf2f9;
+            padding: 10px 20px;
+            border-radius: 60px;
+            box-shadow: 0 4px 8px #bacddc;
+        }
+        .property-name {
+            font-weight: 600;
+            color: #0a3147;
+            min-width: 120px;
+        }
+        .dropzone {
+            flex: 1;
+            min-width: 150px;
+            background: white;
+            border: 3px dashed #2f5575;
+            border-radius: 40px;
+            padding: 10px 20px;
+            margin-left: 15px;
+            font-family: 'Fira Code', monospace;
+            font-size: 1rem;
+            text-align: center;
+            color: #1f3a4e;
+            transition: 0.2s;
+            box-shadow: inset 0 2px 5px #00000010;
+            cursor: grab;
+        }
+        .dropzone.correct {
+            background: #c8f0d1;
+            border-color: #1f8b4c;
+            box-shadow: 0 0 0 3px #a3e0b5;
+        }
+        .dropzone.incorrect {
+            background: #ffe1de;
+            border-color: #c7423a;
+            box-shadow: 0 0 0 3px #fba09b;
+        }
+        .dropzone:empty::before {
+            content: "???";
+            color: #7a9cba;
+            font-style: italic;
+        }
+        .values-panel {
+            flex: 1;
+            min-width: 220px;
+            background: #ffffffd9;
+            border-radius: 32px;
+            padding: 25px;
+            box-shadow: inset 0 1px 4px #ffffff, 0 10px 20px #b0c4d9;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .draggable {
+            background: #1e4f76;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 50px;
+            font-family: 'Fira Code', monospace;
+            font-size: 1rem;
+            text-align: center;
+            box-shadow: 0 10px 0 #0f2c41, 0 5px 15px #0f2c4170;
+            cursor: grab;
+            transition: 0.1s;
+            border: 2px solid #a4c9ff;
+            user-select: none;
+        }
+        .draggable:active {
+            opacity: 0.7;
+            cursor: grabbing;
+        }
+        .draggable.dragging {
+            opacity: 0.3;
+            transform: scale(0.95);
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            background: #1e4f76;
+            border: none;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 600;
+            padding: 15px 40px;
+            border-radius: 40px;
+            box-shadow: 0 10px 0 #0f2c41, 0 5px 15px black;
+            cursor: pointer;
+            transition: 0.07s linear;
+            letter-spacing: 0.5px;
+        }
+        .btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 4px 0 #0f2c41, 0 5px 15px black;
+        }
+        .btn.reset {
+            background: #5f6c7a;
+            box-shadow: 0 10px 0 #384551;
+        }
+        .result-message {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-top: 20px;
+            min-height: 3rem;
+            color: #1e3c5c;
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <h1>🎨 CSS-игра: Выбери уровень</h1>
+
+    <!-- Переключатель уровней -->
+    <div class="level-selector" id="levelSelector">
+        <button class="level-btn active" data-level="1">Уровень 1</button>
+        <button class="level-btn" data-level="2">Уровень 2</button>
+        <button class="level-btn" data-level="3">Уровень 3</button>
+    </div>
+
+    <!-- Игровая область -->
+    <div class="play-area">
+        <div class="properties-panel" id="propertiesPanel"></div>
+        <div class="values-panel" id="valuesPanel"></div>
+    </div>
+
+    <div class="buttons">
+        <button class="btn" id="checkBtn">✅ Проверить</button>
+        <button class="btn reset" id="resetBtn">🔄 Сбросить уровень</button>
+    </div>
+    <div class="result-message" id="resultMessage"></div>
+</div>
+
+<script>
+    (function() {
+        // Данные уровней
+        const levels = {
+            1: {
+                properties: [
+                    { name: 'border:', expected: '2px solid blue' },
+                    { name: 'padding:', expected: '10px' },
+                    { name: 'border-radius:', expected: '5px' },
+                    { name: 'box-shadow:', expected: '0 2px 5px gray' },
+                    { name: 'transition:', expected: '0.3s' },
+                    { name: ':hover {', expected: 'background: lightblue;' }
+                ],
+                values: [
+                    '0.3s',
+                    '2px solid blue',
+                    '10px',
+                    'background: lightblue;',
+                    '5px',
+                    '0 2px 5px gray'
+                ]
+            },
+            2: {
+                properties: [
+                    { name: 'display:', expected: 'flex' },
+                    { name: 'justify-content:', expected: 'center' },
+                    { name: 'align-items:', expected: 'center' },
+                    { name: 'flex-direction:', expected: 'column' },
+                    { name: 'gap:', expected: '15px' },
+                    { name: 'background:', expected: 'linear-gradient(45deg, red, blue)' }
+                ],
+                values: [
+                    'center',
+                    'flex',
+                    'linear-gradient(45deg, red, blue)',
+                    'center',
+                    'column',
+                    '15px'
+                ]
+            },
+            3: {
+                properties: [
+                    { name: '::before {', expected: 'content: "★";' },
+                    { name: '::after {', expected: 'content: "";' },
+                    { name: 'opacity:', expected: '0.5' },
+                    { name: 'cursor:', expected: 'pointer' },
+                    { name: 'overflow:', expected: 'hidden' },
+                    { name: 'transform:', expected: 'scale(1.1)' }
+                ],
+                values: [
+                    'hidden',
+                    'content: "";',
+                    '0.5',
+                    'content: "★";',
+                    'pointer',
+                    'scale(1.1)'
+                ]
+            }
+        };
+
+        let currentLevel = 1; // текущий уровень
+        const propertiesPanel = document.getElementById('propertiesPanel');
+        const valuesPanel = document.getElementById('valuesPanel');
+        const dropZones = []; // будет обновляться после рендера
+        const draggables = []; // будет обновляться после рендера
+
+        // Функция рендера текущего уровня
+        function renderLevel(level) {
+            const levelData = levels[level];
+            if (!levelData) return;
+
+            // Очищаем панели
+            propertiesPanel.innerHTML = '';
+            valuesPanel.innerHTML = '';
+
+            // Создаём строки свойств
+            levelData.properties.forEach((prop, index) => {
+                const row = document.createElement('div');
+                row.className = 'property-row';
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'property-name';
+                nameSpan.textContent = prop.name;
+
+                const dropzone = document.createElement('span');
+                dropzone.className = 'dropzone';
+                dropzone.setAttribute('data-expected', prop.expected);
+                dropzone.setAttribute('data-idx', index);
+
+                row.appendChild(nameSpan);
+                row.appendChild(dropzone);
+                if (prop.name.includes('{')) {
+                    // для псевдоэлементов добавим закрывающую скобку
+                    const closeSpan = document.createElement('span');
+                    closeSpan.textContent = ' }';
+                    closeSpan.style.marginLeft = '5px';
+                    row.appendChild(closeSpan);
+                }
+                propertiesPanel.appendChild(row);
+            });
+
+            // Создаём перетаскиваемые значения
+            levelData.values.forEach((val, index) => {
+                const dragEl = document.createElement('div');
+                dragEl.className = 'draggable';
+                dragEl.setAttribute('draggable', 'true');
+                dragEl.setAttribute('data-value', val);
+                dragEl.textContent = val;
+                valuesPanel.appendChild(dragEl);
+            });
+
+            // Переинициализируем drag & drop для новых элементов
+            initDragDrop();
+            // Сбрасываем подсветку и сообщение
+            document.querySelectorAll('.dropzone').forEach(z => {
+                z.classList.remove('correct', 'incorrect');
+            });
+            document.getElementById('resultMessage').textContent = '';
+        }
+
+        // Инициализация drag & drop
+        function initDragDrop() {
+            const drops = document.querySelectorAll('.dropzone');
+            const drags = document.querySelectorAll('.draggable');
+
+            // Удаляем старые обработчики (через replace или просто повесим новые)
+            // Просто удалим все слушатели, но проще пересоздать.
+            // Для чистоты удалим старые обработчики, заменив элементы? Или можно использовать вновь созданные.
+            // Т.к. мы создали новые элементы, старых обработчиков на них нет. Нужно навесить.
+
+            drags.forEach(drag => {
+                drag.addEventListener('dragstart', dragStartHandler);
+                drag.addEventListener('dragend', dragEndHandler);
+            });
+
+            drops.forEach(zone => {
+                zone.addEventListener('dragover', dragOverHandler);
+                zone.addEventListener('dragleave', dragLeaveHandler);
+                zone.addEventListener('drop', dropHandler);
+            });
+        }
+
+        // Обработчики событий drag & drop
+        function dragStartHandler(e) {
+            e.dataTransfer.setData('text/plain', e.target.getAttribute('data-value'));
+            e.dataTransfer.effectAllowed = 'copy';
+            e.target.classList.add('dragging');
+        }
+
+        function dragEndHandler(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function dragOverHandler(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            e.target.style.background = '#f0f9ff';
+        }
+
+        function dragLeaveHandler(e) {
+            e.target.style.background = 'white';
+        }
+
+        function dropHandler(e) {
+            e.preventDefault();
+            e.target.style.background = 'white';
+            const value = e.dataTransfer.getData('text/plain');
+            if (value) {
+                e.target.textContent = value;
+                // Убираем классы подсветки, если они были
+                e.target.classList.remove('correct', 'incorrect');
+            }
+        }
+
+        // Проверка правильности
+        function checkAnswers() {
+            const drops = document.querySelectorAll('.dropzone');
+            let correctCount = 0;
+            drops.forEach(zone => {
+                const expected = zone.getAttribute('data-expected');
+                const actual = zone.textContent.trim();
+                zone.classList.remove('correct', 'incorrect');
+                if (actual === expected) {
+                    zone.classList.add('correct');
+                    correctCount++;
+                } else {
+                    zone.classList.add('incorrect');
+                }
+            });
+
+            const msg = document.getElementById('resultMessage');
+            if (correctCount === drops.length) {
+                msg.textContent = '🎉 Идеально! Все пары верны!';
+                msg.style.color = '#1f8b4c';
+            } else {
+                msg.textContent = `⚠️ Правильно: ${correctCount} из ${drops.length}. Попробуй исправить ошибки.`;
+                msg.style.color = '#c7423a';
+            }
+        }
+
+        // Сброс текущего уровня (очистка зон)
+        function resetLevel() {
+            document.querySelectorAll('.dropzone').forEach(zone => {
+                zone.textContent = '';
+                zone.classList.remove('correct', 'incorrect');
+            });
+            document.getElementById('resultMessage').textContent = '';
+        }
+
+        // Переключение уровня
+        function switchLevel(level) {
+            currentLevel = level;
+            renderLevel(level);
+            // Обновляем активную кнопку
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-level') == level) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // Навешиваем обработчики на кнопки уровней
+        document.querySelectorAll('.level-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                const level = e.target.getAttribute('data-level');
+                switchLevel(parseInt(level));
+            });
+        });
+
+        // Кнопка проверки
+        document.getElementById('checkBtn').addEventListener('click', checkAnswers);
+
+        // Кнопка сброса
+        document.getElementById('resetBtn').addEventListener('click', resetLevel);
+
+        // Инициализация первого уровня
+        switchLevel(1);
+    })();
+</script>
+</body>
+</html>

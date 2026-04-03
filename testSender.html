@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Webhook Messenger | JSON Form</title>
+  <style>
+    /* bare-bones but readable – minimal reset & spacing */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f1f5f9;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: white;
+      max-width: 560px;
+      width: 100%;
+      border-radius: 1.25rem;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+      padding: 2rem 1.8rem 2.2rem 1.8rem;
+      transition: all 0.2s ease;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: #0a0f1c;
+      margin-bottom: 0.4rem;
+    }
+
+    .sub {
+      color: #4b5563;
+      font-size: 0.9rem;
+      border-left: 3px solid #3b82f6;
+      padding-left: 0.75rem;
+      margin-bottom: 1.6rem;
+      margin-top: 0.25rem;
+    }
+
+    .webhook-badge {
+      background: #eef2ff;
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.8rem;
+      border-radius: 2rem;
+      color: #1e40af;
+      display: inline-block;
+      margin-bottom: 1.4rem;
+      word-break: break-all;
+    }
+
+    label {
+      font-weight: 500;
+      font-size: 0.85rem;
+      color: #1f2937;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 0.7rem 0.9rem;
+      font-size: 0.95rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.75rem;
+      background: #ffffff;
+      transition: 0.2s;
+      font-family: inherit;
+      margin-bottom: 1.2rem;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 95px;
+    }
+
+    button {
+      background: #0f172a;
+      color: white;
+      border: none;
+      padding: 0.8rem 1.2rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      border-radius: 2rem;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s, transform 0.05s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-family: inherit;
+    }
+
+    button:hover {
+      background: #1e293b;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .status {
+      margin-top: 1.5rem;
+      padding: 0.85rem 1rem;
+      border-radius: 1rem;
+      font-size: 0.85rem;
+      background: #f8fafc;
+      color: #0f172a;
+      border-left: 4px solid #94a3b8;
+      transition: 0.1s;
+      word-break: break-word;
+    }
+
+    .status.success {
+      background: #ecfdf5;
+      border-left-color: #10b981;
+      color: #065f46;
+    }
+
+    .status.error {
+      background: #fef2f2;
+      border-left-color: #ef4444;
+      color: #991b1b;
+    }
+
+    .status.info {
+      background: #eff6ff;
+      border-left-color: #3b82f6;
+      color: #1e3a8a;
+    }
+
+    hr {
+      margin: 1rem 0 0.8rem;
+      border: none;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .example-hint {
+      font-size: 0.75rem;
+      color: #5b6e8c;
+      margin-top: -0.8rem;
+      margin-bottom: 0.8rem;
+      display: flex;
+      gap: 1rem;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>📨 JSON webhook sender</h1>
+  <div class="sub">simple form → raw JSON payload</div>
+  <div class="webhook-badge">
+    🔗 POST → http://localhost:3000/api/messages
+  </div>
+
+  <form id="messageForm" method="POST">
+    <label for="name">Full name</label>
+    <input type="text" id="name" name="name" placeholder="e.g., Student" value="Student" required>
+
+    <label for="email">Email address</label>
+    <input type="email" id="email" name="email" placeholder="student@example.com" value="student@example.com" required>
+
+    <label for="message">Message</label>
+    <textarea id="message" name="message" placeholder="Write something..." required>Hello!</textarea>
+    <div class="example-hint">
+      <span>✨ prefilled example matches expected JSON</span>
+    </div>
+
+    <button type="submit" id="submitBtn">
+      <span>📡</span> Send JSON to webhook
+    </button>
+  </form>
+
+  <div id="statusMessage" class="status info">
+    ⚡ Ready — submit will send <code>{ "name", "email", "message" }</code> to localhost:3000
+  </div>
+  <hr />
+  <div style="font-size: 0.7rem; text-align: center; color: #6c757d;">
+    expects endpoint: http://localhost:3000/api/messages<br>
+    Content-Type: application/json
+  </div>
+</div>
+
+<script>
+  (function() {
+    // DOM elements
+    const form = document.getElementById('messageForm');
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const messageInput = document.getElementById('message');
+    const statusDiv = document.getElementById('statusMessage');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Helper to show status message (clear style)
+    function setStatus(text, type = 'info') {
+      statusDiv.textContent = text;
+      statusDiv.className = 'status'; // reset base
+      if (type === 'success') {
+        statusDiv.classList.add('success');
+      } else if (type === 'error') {
+        statusDiv.classList.add('error');
+      } else {
+        statusDiv.classList.add('info');
+      }
+    }
+
+    // Reset status to idle after few seconds? not required, but user friendly
+    let timeoutId = null;
+    function setStatusWithTimeout(text, type, duration = 5000) {
+      if (timeoutId) clearTimeout(timeoutId);
+      setStatus(text, type);
+      if (duration > 0) {
+        timeoutId = setTimeout(() => {
+          if (statusDiv.innerText === text) {
+            setStatus('✓ Idle — ready to send another request', 'info');
+          }
+          timeoutId = null;
+        }, duration);
+      }
+    }
+
+    // handle form submission: build JSON and POST to webhook
+    async function submitFormToWebhook(event) {
+      event.preventDefault();   // prevent browser default POST (no page reload)
+
+      // get current values and trim spaces
+      let name = nameInput.value.trim();
+      let email = emailInput.value.trim();
+      let message = messageInput.value.trim();
+
+      // basic validation: ensure fields aren't empty (bare-bones but helpful)
+      if (!name) {
+        setStatusWithTimeout('❌ Name is required. Please enter a name.', 'error', 3500);
+        nameInput.focus();
+        return;
+      }
+      if (!email) {
+        setStatusWithTimeout('❌ Email address is required.', 'error', 3500);
+        emailInput.focus();
+        return;
+      }
+      // very simple email format check (just to avoid obvious mistake)
+      const emailPattern = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+      if (!emailPattern.test(email)) {
+        setStatusWithTimeout('⚠️ Please provide a valid email address (e.g., name@domain.com).', 'error', 4000);
+        emailInput.focus();
+        return;
+      }
+      if (!message) {
+        setStatusWithTimeout('❌ Message cannot be empty.', 'error', 3500);
+        messageInput.focus();
+        return;
+      }
+
+      // build JSON object exactly as expected: { "name": "...", "email": "...", "message": "..." }
+      const payload = {
+        name: name,
+        email: email,
+        message: message
+      };
+
+      // endpoint from requirement
+      const webhookUrl = 'http://localhost:3000/api/messages';
+
+      // disable button during request to avoid double submission
+      submitBtn.disabled = true;
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<span>⏳</span> Sending JSON...';
+
+      setStatus(`📤 Sending JSON to ${webhookUrl} ...`, 'info');
+
+      try {
+        // Perform POST request with JSON body
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        // get response text for better debugging (even if not JSON)
+        let responseText = '';
+        let responseData = null;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          responseData = await response.json();
+          responseText = JSON.stringify(responseData);
+        } else {
+          responseText = await response.text();
+        }
+
+        if (response.ok) {
+          // success (2xx status)
+          let successMsg = `✅ JSON sent successfully! Status: ${response.status}. `;
+          if (responseData && responseData.message) {
+            successMsg += `Server: ${responseData.message}`;
+          } else if (responseText && responseText.length < 120) {
+            successMsg += `Response: ${responseText}`;
+          } else {
+            successMsg += `Webhook accepted the payload.`;
+          }
+          setStatusWithTimeout(successMsg, 'success', 6000);
+          // optional: reset form? we keep values, but you can keep them as is.
+          // (we do NOT clear to allow re-submit with small edit, but you can uncomment if needed)
+          // nameInput.value = ''; emailInput.value = ''; messageInput.value = '';
+        } else {
+          // server responded with error status (4xx, 5xx)
+          let errorDetail = `Server responded with ${response.status} ${response.statusText}`;
+          if (responseText) {
+            errorDetail += ` — ${responseText.substring(0, 150)}`;
+          }
+          setStatusWithTimeout(`❌ Webhook error: ${errorDetail}`, 'error', 8000);
+          console.error('Webhook POST failed:', response.status, responseText);
+        }
+      } catch (networkError) {
+        // network / CORS / connection refused / localhost not running
+        let errorMsg = `🚫 Cannot reach webhook. Is the server running on http://localhost:3000 ?\nError: ${networkError.message}`;
+        setStatusWithTimeout(errorMsg, 'error', 10000);
+        console.error('Fetch error:', networkError);
+      } finally {
+        // re-enable button and restore original text
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+        // clear timeout reference on button enable (avoid race)
+        if (timeoutId) {
+          // we keep status timeout but that's fine; we don't override final status
+        }
+      }
+    }
+
+    // attach event listener to form
+    form.addEventListener('submit', submitFormToWebhook);
+
+    // optional: add small console hint for developers
+    console.log('🧩 bare-bones form ready — POST JSON to http://localhost:3000/api/messages');
+    console.log('📦 expected payload: { "name": "...", "email": "...", "message": "..." }');
+  })();
+</script>
+</body>
+</html>
